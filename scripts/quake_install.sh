@@ -19,7 +19,6 @@ readonly BASE_URL="https://gooseberry.github.io/assets/images/"
 
 # Game Specific Variables
 GAME_BASE_DIR=${HOME}/.quakespasm
-TMP_DIR=${HOME}/tmp_quake_installer
 INSTALLER_MD5="c8acba92fca95b8ba67111fa81730141" #setup_quake_the_offering_2.0.0.6.exe
 GAME_FILES=(id1/pak0.pak \
   id1/pak1.pak \
@@ -31,7 +30,6 @@ REQUIRED_PACKAGES=(quakespasm \
   mesa-utils \
   vorbis-tools)
 
-# Helper Functions
 
 check_installer () {
   installer=$1
@@ -59,55 +57,54 @@ check_dependencies () {
   do
     echo "   ${package}..."
     if dpkg --get-selections | grep "^$package[[:space:]]*install$" >/dev/null ; then
-      echo -e "\e[1A\e[K   ${package}...OK"
+      echo -e "\e[1A\e[K   ${package}...OK!"
     else
-      echo -e "\e[1A\e[K   ${package}...FAILED"
+      echo -e "\e[1A\e[K   ${package}...FAILED!"
       error_msg+=" \n   ${package}"
       errors=1
     fi
   done
 
   if [ ${errors} ] ; then
+    echo "All dependencies have been found."
+  else	  
     error_msg+="\nPlease install missing packages and try again."
     echo -e "${error_msg}"
     exit_error
   fi
 }
 
-install_files () {
-  src=$1
-  dst=$2
-  files=$3
-
-  for file in "${files[@]}"
-  do
-    if [ -f "${src}/${file}" ] ; then
-      mv "${src}/${file}" "${dst}/${file}"
-    fi
-  done
-}
-
 convert_music () {
-
   bin_file=$1
   cue_file=$2
   dest_dir=$3
 
-  bchunk -w "${bin_file}" "${cue_file}" "${dest_dir}/track"
-  rm "${dest_dir}/track01.iso"
+  msg="   Extracting music tracks from CD image..."
+  echo "${msg}"
+  if bchunk -w "${bin_file}" "${cue_file}" "${dest_dir}/track" >/dev/null ; then
+    rm "${dest_dir}/track01.iso"
+    echo -e "\e[1A\e[K${msg}DONE!"
+  else
+    echo -e "\e[1A\e[K${msg}FAILED!"
+    echo "   Failed to extract the music track.  Installation will continue without"
+    echo "   music files."
+    return
+  fi
 
+  echo "   Converting RAW CD audio to Ogg Vorbis format"
   cd "${dest_dir}"
   for track in $( ls *.wav );
   do
-    oggenc -q 8 "${track}"
-    rm "${track}"
+    msg="      ${track}..."
+    echo "${msg}"
+    if oggenc -Q -q 8 "${track}" >/dev/null ; then
+      rm "${track}"
+      echo -e "\e[1A\e[K${msg}DONE!"
+    else
+      echo -e "\e[1A\e[K${msg}FAILED!"
+      echo "      Failed to convert ${track}.  Installation will continue without this track."
+    fi
   done
-}
-
-download () {
-  filename=$1
-
-  wget "${BASE_URL}/${filename}" -O "${ICONS_DIR}/${filename}"
 }
 
 generate_desktop_entry () {
@@ -123,7 +120,17 @@ generate_desktop_entry () {
   Name=${name}
   Icon=${ICONS_DIR}/${icon}.png
   Path=/usr/games
+  Exec=${exec_string}
 DSKTP
+}
+
+clean_up () {
+  tmp_dir=$1
+
+  echo "   Deleting temporary directory ${tmp_dir}..."
+  rm -rf ${tmp_dir}
+  echo -e "\e[1A\e[K   Deleting temporary directory ${tmp_dir}...DONE!"
+
 }
 
 exit_error () {
@@ -148,14 +155,25 @@ main () {
   echo
   echo "Checking installer..."
   check_installer ${installer} ${INSTALLER_MD5}
+  
   echo "Checking for dependencies..."
   check_dependencies ${REQUIRED_PACKAGES[@]}
 
-  mkdir -p "${TMP_DIR}"
+  echo
+  echo "******   INSTALLING QUAKE   ******"
+  tmp_dir=$(mktemp -d -t gog_quake_XXXXXXXX)
+  echo "Extracting ${installer} to ${tmp_dir}..."
+  if innoextract --lowercase -s -p -d "${tmp_dir}" "${installer}" ;  then
+    echo -e "\e[1A\e[KExtracting ${installer} to ${tmp_dir}...DONE!"
+  else
+    echo "Extraction failed.  Aborting Installation."
+    clean_up ${tmp_dir}
+    exit_error
+  fi
 
-  innoextract --lowercase -d "${TMP_DIR}" "${installer}"
-  game_source="${TMP_DIR}/app"
+  game_source="${tmp_dir}/app"
 
+  echo "Copying game files..."
   # Install each map pack as it's own game.
   map_packs=("id1" "hipnotic" "rogue")
   for map_pack in "${map_packs[@]}"
@@ -173,7 +191,7 @@ main () {
 	name="Quake SoA"
 	exec_string="quakespasm -game hipnotic"
 	;;
-      rogue)
+     rogue)
         echo "Dissolution of Eternity"
 	bin_file="${game_source}/gamed.gog"
 	cue_file="${game_source}/gamed.cue"
@@ -192,18 +210,43 @@ main () {
 	;;
     esac	
   
-    install_files "${game_source}" "${game_dir}" "${game_files[@]}"
-    convert_music "${bin_file}" "${cue_file}" "${game_dir}/music/"
-    
-    # This part is only required if the game does not create a desktop entry.
-    download "${desktop}.png"
+    for file in "${game_files[@]}"
+    do
+      msg="   Moving ${game_source}/${map_pack}/${file} to ${game_dir}/${file}..."
+      echo ${msg}
+      if [ -f "${game_source}/${map_pack}/${file}" ] ; then
+        mv "${game_source}/${map_pack}/${file}" "${game_dir}/${file}"
+        echo -e "\e[1A\e[K${msg}DONE!"
+      fi
+    done
+
+    echo "   Downloading desktop icon..."
+    wget -q "${BASE_URL}/${desktop}.png" -O "${ICONS_DIR}/${desktop}.png"
+    echo -e "\e[1A\e[K   Downloading desktop icon...DONE!"
+
+    echo "   Generating desktop shortcut..."
     generate_desktop_entry "${desktop}" "${name}" "${exec_string}"
+    echo -e "\e[1A\e[K   Generating desktop shortcut...DONE!"
+
+
+    convert_music "${bin_file}" "${cue_file}" "${game_dir}/music/"
   done
 
-    # Clean up delete the temp folder
-    rm -rf "${TMP_DIR}" 
-
-    exit 0
+  echo "Cleaning up..."
+  clean_up ${tmp_dir}
+  echo
+  echo "************************************************************"
+  echo "***                Quake: The Offering                   ***"
+  echo "***             - INSTALLATION COMPLETE -                ***"
+  echo "************************************************************"
+  echo
+  echo "Quake: The Offering, along with the two map packs, Scourge of"
+  echo "Armagon, and Dissolution of Eternity, have been installed on"
+  echo "this system.  To start playing, click on the respective"
+  echo "Quake icon in the Chrome application launcher under the linux"
+  echo "folder."
+  echo
+  exit 0
 }
 
 main $1

@@ -65,7 +65,7 @@ check_dependencies () {
     fi
   done
 
-  if [ ${errors} ] ; then
+  if [ ${errors} -eq "0" ] ; then
     echo "All dependencies have been found."
   else	  
     error_msg+="\nPlease install missing packages and try again."

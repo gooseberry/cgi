@@ -20,31 +20,59 @@ readonly BASE_URL="https://gooseberry.github.io/assets/images/"
 # Game Specific Variables
 GAME_BASE_DIR=${HOME}/.quakespasm
 TMP_DIR=${HOME}/tmp_quake_installer
+INSTALLER_MD5="c8acba92fca95b8ba67111fa81730141" #setup_quake_the_offering_2.0.0.6.exe
 GAME_FILES=(id1/pak0.pak \
   id1/pak1.pak \
   hipnotic/pak0.pak \
   rogue/pak0.pak)
+REQUIRED_PACKAGES=(quakespasm \
+  innoextract \
+  bchunk \
+  mesa-utils \
+  vorbis-tools)
 
 # Helper Functions
 
-check_dependencies () {
-  search_apt quakespasm
+check_installer () {
+  installer=$1
+  hash_value=$2
+  msg="   checking MD5SUM for ${installer}..."
 
+  echo "${msg}"
 
+  if md5sum --status -c<<< "${hash_value} ${installer}" ; then
+    echo -e "\e[1A\e[K${msg}OK!"
+  else
+    echo -e "\e[1A\e[K${msg}FAILED!"
+    echo
+    echo "This script has not been tested with this version of the Quake installer."
+    echo "The script will attempt to install this version, but may fail."
+  fi
 }
 
-search_apt () {
-  pkg=$1
-  if dpkg --get-selections | grep -q "^$pkg[[:space:]]*install$" >/dev/null
-    return
-  elif
-    echo "Quakespasm isn't installed on the system."
-    echo "Please install Quakespasm with the followin command and try again."
-    echo
-    echo "sudo apt-get update && apt-get install quakespasm -y"
-    echo
-    echo
-    exit_error "Dependency check failed...Aborting install"
+check_dependencies () {
+  packages=$@
+  error_msg="\nThe following packages are not installed:"
+  errors=0
+
+  for package in ${packages[@]}
+  do
+    echo "   ${package}..."
+    if dpkg --get-selections | grep "^$package[[:space:]]*install$" >/dev/null ; then
+      echo -e "\e[1A\e[K   ${package}...OK"
+    else
+      echo -e "\e[1A\e[K   ${package}...FAILED"
+      error_msg+=" \n   ${package}"
+      errors=1
+    fi
+  done
+
+  if [ ${errors} ] ; then
+    error_msg+="\nPlease install missing packages and try again."
+    echo -e "${error_msg}"
+    exit_error
+  fi
+}
 
 install_files () {
   src=$1
@@ -94,17 +122,16 @@ generate_desktop_entry () {
   Type=Application
   Name=${name}
   Icon=${ICONS_DIR}/${icon}.png
-  Exec=${exec_string}
-  Categories=Game;
   Path=/usr/games
 DSKTP
 }
 
 exit_error () {
-  msg=$1
-
-  echo "******  ERROR  ******"
-  echo $msg
+  echo
+  echo "******  INSTALLATION ABORTED  ******"
+  echo
+  exit 1
+}
 
 main () {
 
@@ -119,8 +146,10 @@ main () {
   echo "and the expansion packs, Scourge of Armagon and Dissolution"
   echo "of Eternity, to run with the open source engine, Quakespasm."
   echo
-  echo
+  echo "Checking installer..."
+  check_installer ${installer} ${INSTALLER_MD5}
   echo "Checking for dependencies..."
+  check_dependencies ${REQUIRED_PACKAGES[@]}
 
   mkdir -p "${TMP_DIR}"
 

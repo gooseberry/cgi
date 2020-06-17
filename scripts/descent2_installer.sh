@@ -82,33 +82,36 @@ check_dependencies () {
   fi
 }
 
-install_files () {
-  src=$1
-  dst=$2
-  files=$3
-
-  for file in "${files[@]}"
-  do
-    if [ -f "${src}/${file}" ] ; then
-      mv "${src}/${file}" "${dst}/${file}"
-    fi
-  done
-}
-
 convert_music () {
-
   bin_file=$1
   cue_file=$2
   dest_dir=$3
 
-  bchunk -w "${bin_file}" "${cue_file}" "${dest_dir}/track"
-  rm "${dest_dir}/track01.iso"
+  msg="   Extracting music tracks from CD image..."
+  echo "${msg}"
+  if bchunk -w "${bin_file}" "${cue_file}" "${dest_dir}/track" >/dev/null ; then
+    rm "${dest_dir}/track01.iso"
+    echo -e "\e[1A\e[K${msg}DONE!"
+  else
+    echo -e "\e[1A\e[K${msg}FAILED!"
+    echo "   Failed to extract the music track.  Installation will continue without"
+    echo "   music files."
+    return
+  fi
 
+  echo "   Converting RAW CD audio to Ogg Vorbis format"
   cd "${dest_dir}"
   for track in $( ls *.wav );
   do
-    oggenc -q 8 "${track}"
-    rm "${track}"
+    msg="      ${track}..."
+    echo "${msg}"
+    if oggenc -Q -q 8 "${track}" >/dev/null ; then
+      rm "${track}"
+      echo -e "\e[1A\e[K${msg}DONE!"
+    else
+      echo -e "\e[1A\e[K${msg}FAILED!"
+      echo "      Failed to convert ${track}.  Installation will continue without this track."
+    fi
   done
 }
 
@@ -131,33 +134,7 @@ CNFG
   fi
 }
 
-download () {
-  filename=$1
-
-  wget "${BASE_URL}/${filename}" -O "${ICONS_DIR}/${filename}"
-}
-
-generate_desktop_entry () {
-  icon=$1
-  name=$2
-  exec_string=$3
-
-  cat >${DESKTOP_ENTRIES}/${icon}.desktop <<-DSKTP
-  [Desktop Entry]
-  Encoding=UTF-8
-  Value=1.0
-  Type=Application
-  Name=${name}
-  Icon=${ICONS_DIR}/${icon}.png
-  Exec=${exec_string}
-  Categories=Game;
-  Path=/usr/games
-DSKTP
-}
-
 clean_up () {
-  tmp_dir=$1
-
   echo "   Deleting temporary directory ${tmp_dir}..."
   rm -rf ${tmp_dir}
   echo -e "\e[1A\e[K   Deleting temporary directory ${tmp_dir}...DONE!"
@@ -201,32 +178,44 @@ main () {
     exit_error
   fi
 
+  game_source="${tmp_dir}/app"
+
+  echo "Copying game files..."
+  mkdir -p "${GAME_BASE_DIR}/music"
   bin_file="${game_source}/descent_ii.gog"
   cue_file="${game_source}/descent_ii.inst"
   config_file="${game_dir}/descent.cfg"
 
+  for file in ${GAME_FILES[@]}
+  do
+    src="${game_source}/${file}"
+    dst="${GAME_BASE_DIR}/${file}"
+    msg="   Moving ${src} to ${dst}..." 
+    echo ${msg}
+    if [ -f "${src}" ] ; then
+      mv "${src}" "${dst}"
+      echo -e "\e[1A\e[K${msg}DONE!"
+    fi
+  done
 
-  #mkdir -p "${game_dir}/music"
-   
-  
-  # These variables are only needed to create a desktop entry
-  #desktop="descent-2"
-  #name="Descent 2"
-  #exec_string="d2x-rebirth"
-  
-  #install_files "${game_source}" "${game_dir}" "${game_files[@]}"
-  #convert_music "${bin_file}" "${cue_file}" "${game_dir}/music"
-  #generate_config "$config_file" "${game_dir}/music"
-    
-  # This part is only required if the game does not create a desktop entry.
-  # since d2x-rebirth creates a desktop entry, this step is skipped
-  #download "${desktop}.png"
-  #generate_desktop_entry "${desktop}" "${name}" "${exec_string}"
+  convert_music "${bin_file}" "${cue_file}" "${GAME_BASE_DIR}/music"
+  msg="   Configuring Descent2 to play CD music on startup..."
+  echo "${msg}"
+  generate_config "$config_file" "${GAME_BASE_DIR}/music"
+  echo -e "\e[1A\e[K${msg}DONE!"
 
-  # Clean up delete the temp folder
-  #rm -rf "${TMP_DIR}" 
-
+  echo "Cleaning up..."  
   clean_up ${tmp_dir}
+  echo
+  echo "************************************************************"
+  echo "***                     Descent 2                        ***"
+  echo "***             - INSTALLATION COMPLETE -                ***"
+  echo "************************************************************"
+  echo
+  echo "Descent 2 has been installed on this system.  To start" 
+  echo "playing, click on the d2x-rebirth icon in the Chrome"
+  echo "application launcher under the linux folder."
+  echo
 
   exit 0
 }

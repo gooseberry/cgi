@@ -184,7 +184,7 @@ main () {
   mkdir -p "${GAME_BASE_DIR}/music"
   bin_file="${game_source}/descent_ii.gog"
   cue_file="${game_source}/descent_ii.inst"
-  config_file="${game_dir}/descent.cfg"
+  config_file="${GAME_BASE_DIR}/descent.cfg"
 
   for file in ${GAME_FILES[@]}
   do

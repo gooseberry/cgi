@@ -72,6 +72,10 @@ check_dependencies () {
     echo -e "${error_msg}"
     exit_error
   fi
+
+  # Create the Icon and Applications directory if they don't exists
+  mkdir -p ${ICON_DIR}
+  mkdir -p ${DESKTOP_ENTRIES} 
 }
 
 convert_music () {

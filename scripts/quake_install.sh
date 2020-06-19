@@ -74,7 +74,7 @@ check_dependencies () {
   fi
 
   # Create the Icon and Applications directory if they don't exists
-  mkdir -p ${ICON_DIR}
+  mkdir -p ${ICONS_DIR}
   mkdir -p ${DESKTOP_ENTRIES} 
 }
 

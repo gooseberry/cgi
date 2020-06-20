@@ -25,7 +25,8 @@ GAME_FILES=(data \
 	qdata \
 	anims \
 	sound)
-REQUIRED_PACKAGES=(corsix-th)
+REQUIRED_PACKAGES=(corsix-th \
+	innoextract)
 
 check_installer () {
   installer=$1

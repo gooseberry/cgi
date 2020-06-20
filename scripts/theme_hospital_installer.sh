@@ -20,10 +20,11 @@ readonly BASE_URL="https://gooseberry.github.io/assets/images/"
 # Game Specific Variables
 GAME_BASE_DIR=${HOME}/.config/CorsixTH
 INSTALLER_MD5="e4cba7cfddd5dd2d4baf4761bc86a8c8" #setup_theme_hospital_v3_\(28027\).exe
-GAME_FILES=(data \
+GAME_FILES=(anims \
+	data \
+	intro \
 	levels \
 	qdata \
-	anims \
 	sound)
 REQUIRED_PACKAGES=(corsix-th \
 	innoextract)
@@ -114,27 +115,50 @@ main () {
     exit_error
   fi
 
-  game_source="${tmp_dir}"
-
   echo "Copying game files..."
   mkdir -p "${GAME_BASE_DIR}"
 
   for file in ${GAME_FILES[@]}
   do
-    src="${game_source}/${file}"
+    src="${tmp_dir}/${file}"
     dst="${GAME_BASE_DIR}/"
     msg="   Moving ${src} to ${dst}..." 
-    echo ${msg}
+    echo "${msg}"
     if [ -d "${src}" ] ; then
-      mv "${src}" "${dst}"
-      echo -e "\e[1A\e[K${msg}DONE!"
+      if mv -n "${src}" "${dst}" ; then
+        echo -e "\e[1A\e[K${msg}DONE!"
+      else
+	echo -e "\e[1A\e[K${msg}FAILED!"
+      fi
     fi
   done
 
+  if [ ! -f "${GAME_BASE_DIR}/config.txt" ] ; then
+    echo "   Default CorsixTH configuration file not found!" 
+    msg="   Downloading default CorsixTH configuration file..."
+    echo "${msg}"
+    if wget -q "https://raw.githubusercontent.com/gooseberry/cgi/master/resources/corsixth-default-config.txt" -O "${GAME_BASE_DIR}/config.txt" ; then
+      echo -e "\e[1A\e[K${msg}DONE!"
+    else
+      echo -e "\e[1A\e[K${msg}FAILED!"
+      echo
+      echo "**** The script was unable to download the default CorsixTH configuration file."
+      echo "Installation will proceed, you will need to manually select the game content"
+      echo "to play Theme Hospital."
+    fi
+  fi
+
   msg="   Configuring Theme Hospital to use GOG.COM game files..."
   echo "${msg}"
-  sed -i "s+/usr/share/games/theme-hospital+${GAME_BASE_DIR}+g" "${GAME_BASE_DIR}/config.txt"
-  echo -e "\e[1A\e[K${msg}DONE!"
+  if sed -i "s+/usr/share/games/theme-hospital+${GAME_BASE_DIR}+g" "${GAME_BASE_DIR}/config.txt" ; then
+    echo -e "\e[1A\e[K${msg}DONE!"
+  else
+    echo -e "\e[1A\e[K${msg}FAILED!"
+    echo
+    echo "**** The script was unable to modify the default CorsixTH configuration file."
+    echo "Installation will proceed, you will need to manually select the game content"
+    echo "to play Theme Hospital."
+  fi
 
   echo "Cleaning up..."  
   clean_up ${tmp_dir}

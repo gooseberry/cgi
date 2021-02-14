@@ -26,13 +26,8 @@ INSTALLER_MD5="31b98618a8f33eadc05700dda3c7d97b" #setup_x-com_ufo_defense_1.2_(2
 APPIMAGE_MD5="007dc6a31e28540432a07dd12020e269" # OpenXcom_1.0_x86-64.AppImage
 GAME_DIRS=(geodata \
 	geograph \
-	language \
 	maps \
-	resources \
 	routes \
-	ruleset \
-	shaders \
-	soldiername \
 	sound \
 	terrain \
 	ufograph \
@@ -101,25 +96,6 @@ generate_desktop_entry () {
 DSKTP
 }
 
-generate_config () {
-
-  config_file=$1
-  music_dir=$2
-  # Create a config file to play CD music by default if one does not already exist
-  # The music can be changed in game.
-  if [ ! -e "${config_file}"  ] ; then
-    cat >${config_file} <<-CNFG
-    MusicType=3
-    CMLevelMusicPath=$music_dir
-    CMMiscMusic0=${music_dir}/track02.ogg
-    CMMiscMusic1=${music_dir}/track03.ogg
-    CMMiscMusic2=${music_dir}/track04.ogg
-    CMMiscMusic3=${music_dir}/track08.ogg
-    CMMiscMusic4=${music_dir}/track09.ogg
-CNFG
-  fi
-}
-
 clean_up () {
   echo "   Deleting temporary directory ${tmp_dir}..."
   rm -rf ${tmp_dir}
@@ -153,7 +129,7 @@ main () {
   check_dependencies ${REQUIRED_PACKAGES[@]}
 
   echo
-  echo "******   INSTALLING X-COM UFO DEFENSE2   ******"
+  echo "******   INSTALLING X-COM UFO DEFENSE   ******"
   tmp_dir=$(mktemp -d -t gog_x-com_ufo_defense_XXXXXXXX)
   echo "Extracting ${installer} to ${tmp_dir}..."
   if innoextract --lowercase -s -p -d "${tmp_dir}" "${installer}" ;  then
@@ -164,24 +140,18 @@ main () {
     exit_error
   fi
 
-  game_source="${tmp_dir}/app"
+  game_source="${tmp_dir}"
 
   echo "Copying game files..."
-  mkdir -p "${GAME_BASE_DIR}/music"
-  bin_file="${game_source}/descent_ii.gog"
-  cue_file="${game_source}/descent_ii.inst"
-  config_file="${GAME_BASE_DIR}/descent.cfg"
-
-  for file in ${GAME_FILES[@]}
+  for dir in "${GAME_DIRS[@]}"
   do
-    src="${game_source}/${file}"
-    dst="${GAME_BASE_DIR}/${file}"
+    dst="${GAME_BASE_DIR}/data/${dir}"
+    mkdir -p ${dst}
+    src="${game_source}/${dir}"
     msg="   Moving ${src} to ${dst}..." 
     echo ${msg}
-    if [ -f "${src}" ] ; then
-      mv "${src}" "${dst}"
-      echo -e "\e[1A\e[K${msg}DONE!"
-    fi
+    mv "${src}"/* "${dst}"
+    echo -e "\e[1A\e[K${msg}DONE!"
   done
 
   echo "Cleaning up..."  

@@ -154,6 +154,30 @@ main () {
     echo -e "\e[1A\e[K${msg}DONE!"
   done
 
+  echo "Configuring OpenXcom application..."
+
+  desktop="openxcom"
+  name="OpenXcom"
+  exec_string="${GAME_BASE_DIR}/${APPIMAGE_FILENAME}"
+
+  msg="   Downloading OpenXcom AppImage..."
+  echo "${msg}"
+  wget -q "${APPIMAGE_URL}"/"${APPIMAGE_FILENAME}" -O "${GAME_BASE_DIR}"/"${APPIMAGE_FILENAME}"
+  echo -e "\e[1A\e[K${msg}DONE!"
+  check_installer "${GAME_BASE_DIR}/${APPIMAGE_FILENAME}" "${APPIMAGE_MD5}"
+  chmod +x "${GAME_BASE_DIR}/${APPIMAGE_FILENAME}"
+
+  msg="   Downloading desktop icon..."
+  mkdir -p "${ICONS_DIR}"
+  echo ${msg}
+  wget -q "${BASE_URL}/${desktop}.png" -O "${ICONS_DIR}/${desktop}.png"
+  echo -e "\e[1A\e[K${msg}DONE!"
+
+  msg="   Generating desktop shortcut..."
+  echo "${msg}"
+  generate_desktop_entry "${desktop}" "${name}" "${exec_string}"
+  echo -e "\e[1A\e[K${msg}DONE!"
+
   echo "Cleaning up..."  
   clean_up ${tmp_dir}
   echo

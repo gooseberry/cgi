@@ -63,8 +63,10 @@ download() {
 
 install_innoextract () {
   # Verify if version 1.9 of innoextract is present and download it if required.
-  mkdir -p $HOME/innoextract
-  cd $HOME/innoextract
+  if [ ! -f "$HOME/innoextract-1.9-linux/innoextract" ] ; then
+    # Download the innoextract binary
+    cd $HOME
+    download $INNO_URL
 
 
 download_script () {

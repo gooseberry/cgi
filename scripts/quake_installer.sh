@@ -173,8 +173,8 @@ main () {
 
   msg="Downloading QuakeSpasm Spiked..."
   echo "${msg}"
-  mkdir -p $HOME/qss
-  wget -q "$QSS_URL$QSS_FILE" -O "$HOME/qss/$QSS_FILE"
+  mkdir -p $QSS_DIR
+  wget -q "$QSS_URL$QSS_FILE" -O "$QSS_DIR/$QSS_FILE"
   echo -e "\e[1A\e[K${msg}DONE!"
 
   msg="Extracting $QSS_FILE..."

@@ -18,17 +18,22 @@ readonly DESKTOP_ENTRIES=${HOME}/.local/share/applications
 readonly BASE_URL="https://gooseberry.github.io/assets/images/"
 
 # Game Specific Variables
-GAME_BASE_DIR=${HOME}/.quakespasm
+GAME_BASE_DIR=${HOME}/.quake
 INSTALLER_MD5="c8acba92fca95b8ba67111fa81730141" #setup_quake_the_offering_2.0.0.6.exe
 GAME_FILES=(id1/pak0.pak \
   id1/pak1.pak \
   hipnotic/pak0.pak \
   rogue/pak0.pak)
-REQUIRED_PACKAGES=(quakespasm \
+REQUIRED_PACKAGES=(libopus0:amd64 \
+  libmad0:amd64
   innoextract \
   bchunk \
   mesa-utils \
   vorbis-tools)
+QSS_URL="https://triptohell.info/moodles/qss/"
+QSS_FILE="quakespasm_spiked_linux64_dev.zip"
+QSS_DIR="$HOME/qss"
+QSS_EXEC="$QSS_DIR/quakespasm-spiked-linux64"
 
 
 check_installer () {
@@ -123,7 +128,6 @@ generate_desktop_entry () {
   Type=Application
   Name=${name}
   Icon=${ICONS_DIR}/${icon}.png
-  Path=/usr/games
   Exec=${exec_string}
 DSKTP
 }
@@ -163,8 +167,21 @@ main () {
   echo "Checking for dependencies..."
   check_dependencies ${REQUIRED_PACKAGES[@]}
 
+
   echo
   echo "******   INSTALLING QUAKE   ******"
+
+  msg="Downloading QuakeSpasm Spiked..."
+  echo "${msg}"
+  mkdir -p $HOME/qss
+  wget -q "$QSS_URL$QSS_FILE" -O "$HOME/qss/$QSS_FILE"
+  echo -e "\e[1A\e[K${msg}DONE!"
+
+  msg="Extracting $QSS_FILE..."
+  echo "${msg}"
+  unzip -q "$QSS_DIR/$QSS_FILE" -d "$QSS_DIR"
+  echo -e "\e[1A\e[K${msg}DONE!"
+
   tmp_dir=$(mktemp -d -t gog_quake_XXXXXXXX)
   echo "Extracting ${installer} to ${tmp_dir}..."
   if innoextract --lowercase -s -p -d "${tmp_dir}" "${installer}" ;  then
@@ -193,7 +210,7 @@ main () {
 	cue_file="${game_source}/gamea.cue"
 	desktop="quake-soa"
 	name="Quake SoA"
-	exec_string="quakespasm -game hipnotic"
+	exec_string="$QSS_EXEC -basedir $GAME_BASE_DIR -game hipnotic"
 	;;
      rogue)
         echo "Dissolution of Eternity"
@@ -201,7 +218,7 @@ main () {
 	cue_file="${game_source}/gamed.cue"
 	desktop="quake-doe"
 	name="Quake DoE"
-	exec_string="quakespasm -game rogue"
+	exec_string="$QSS_EXEC -basedir $GAME_BASE_DIR -game rogue"
         ;;
       *)
         echo "Quake the Offering"
@@ -210,7 +227,7 @@ main () {
 	cue_file="${game_source}/game.cue"
 	desktop="quake"
 	name="Quake"
-	exec_string="quakespasm +playdemo demo1"
+	exec_string="$QSS_EXEC -basedir $GAME_BASE_DIR +playdemo demo1"
 	;;
     esac	
   

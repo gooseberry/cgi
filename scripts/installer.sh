@@ -13,6 +13,7 @@ readonly script_name=$(basename "${0}")
 readonly script_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 # Script Specific Variables
+WORKING=$HOME
 ICONS_DIR=${HOME}/.local/share/icons
 DESKTOP_ENTRIES=${HOME}/.local/share/applications
 BASE_URL="https://gooseberry.github.io/assets/images/"
@@ -24,7 +25,8 @@ SUPPORTED_GAMES=(descent2 "Descent 2"\
 SELECTED_GAME=""
 
 # Download URLS
-INNO_URL="https://constexpr.org/innoextract/files/innoextract-1.9-linux.tar.xz"
+INNO_FILE="innoextract-1.9-linux.tar.xz"
+INNO_URL="https://constexpr.org/innoextract/files/$INNO_FILE"
 
 select_game () {
   SELECTED_GAME=$(zenity --list \
@@ -63,19 +65,28 @@ download() {
 
 install_innoextract () {
   # Verify if version 1.9 of innoextract is present and download it if required.
-  if [ ! -f "$HOME/innoextract-1.9-linux/innoextract" ] ; then
-    # Download the innoextract binary
-    cd $HOME
-    download $INNO_URL
-
+  if [ ! -f "$WORKING/innoextract-1.9-linux/innoextract" ] ; then
+    if (zenity --question \
+      --text="Innoextract is missing, do you want to install it?")
+    then
+      # Download the innoextract binary
+      cd $WORKING
+      download $INNO_URL
+      # Extract the file into the home directory
+      tar -xf $INNO_FILE -C $WORKING
+      # Delete innoextract installer`
+      rm $INNO_FILE
+    fi
+  fi
+}
 
 download_script () {
   download "https://github.com/gooseberry/cgi/raw/main/scripts/quake_install.sh"
 }
 
 main () {
-  select_game
-  download_script
+  #select_game
+  install_innoextract
 }
 
 

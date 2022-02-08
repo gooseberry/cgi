@@ -26,6 +26,7 @@ GAME_FILES=(id1/pak0.pak \
   rogue/pak0.pak)
 REQUIRED_PACKAGES=(libopusfile0 \
   libmad0 \
+  libsdl2-2.0-0 \
   innoextract \
   bchunk \
   mesa-utils \
@@ -67,8 +68,6 @@ check_dependencies () {
       echo -e "\e[1A\e[K   ${package}...MISSING!"
       echo "    Installing ${package}"
       sudo apt-get install -qq ${package} >/dev/null
-      echo
-      echo
     fi
   done
 

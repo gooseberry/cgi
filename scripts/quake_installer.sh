@@ -24,7 +24,7 @@ GAME_FILES=(id1/pak0.pak \
   id1/pak1.pak \
   hipnotic/pak0.pak \
   rogue/pak0.pak)
-REQUIRED_PACKAGES=(libopus0 \
+REQUIRED_PACKAGES=(libopusfile0 \
   libmad0 \
   innoextract \
   bchunk \
@@ -66,7 +66,7 @@ check_dependencies () {
     else
       echo -e "\e[1A\e[K   ${package}...MISSING!"
       echo "    Installing ${package}"
-      sudo apt-get install ${package} -y
+      sudo apt-get install -qq ${package} >/dev/null
       echo
       echo
     fi

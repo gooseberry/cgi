@@ -153,7 +153,8 @@ main () {
   echo
   echo "This script will install and configure Quake: The offering"
   echo "and the expansion packs, Scourge of Armagon and Dissolution"
-  echo "of Eternity, to run with the open source engine, Quakespasm."
+  echo "of Eternity, to run with the open source engine, Quakespasm"
+  echo "Spiked."
   echo
   echo "Checking installer..."
   check_installer ${installer} ${INSTALLER_MD5}

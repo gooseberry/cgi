@@ -24,8 +24,8 @@ GAME_FILES=(id1/pak0.pak \
   id1/pak1.pak \
   hipnotic/pak0.pak \
   rogue/pak0.pak)
-REQUIRED_PACKAGES=(libopus0:amd64 \
-  libmad0:amd64
+REQUIRED_PACKAGES=(libopus0 \
+  libmad0 \
   innoextract \
   bchunk \
   mesa-utils \
@@ -61,7 +61,7 @@ check_dependencies () {
   for package in ${packages[@]}
   do
     echo "   ${package}..."
-    if dpkg --get-selections | grep "^$package[[:space:]]*install$" >/dev/null ; then
+    if dpkg --get-selections | grep "^$package.*[[:space:]]*install$" >/dev/null ; then
       echo -e "\e[1A\e[K   ${package}...INSTALLED!"
     else
       echo -e "\e[1A\e[K   ${package}...MISSING!"

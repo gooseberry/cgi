@@ -62,21 +62,15 @@ check_dependencies () {
   do
     echo "   ${package}..."
     if dpkg --get-selections | grep "^$package[[:space:]]*install$" >/dev/null ; then
-      echo -e "\e[1A\e[K   ${package}...OK!"
+      echo -e "\e[1A\e[K   ${package}...INSTALLED!"
     else
-      echo -e "\e[1A\e[K   ${package}...FAILED!"
-      error_msg+=" \n   ${package}"
-      errors=1
+      echo -e "\e[1A\e[K   ${package}...MISSING!"
+      echo "    Installing ${package}"
+      sudo apt-get install ${package} -y
+      echo
+      echo
     fi
   done
-
-  if [ ${errors} -eq "0" ] ; then
-    echo "All dependencies have been found."
-  else	  
-    error_msg+="\nPlease install missing packages and try again."
-    echo -e "${error_msg}"
-    exit_error
-  fi
 
   # Create the Icon and Applications directory if they don't exists
   mkdir -p ${ICONS_DIR}

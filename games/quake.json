@@ -1,0 +1,51 @@
+{
+  "name": "quake",
+  "files": [
+    {
+      "filename": "setup_quake_the_offering_2.0.0.6.exe",
+      "md5sum": "c8acba92fca95b8ba67111fa81730141"
+    }
+  ],
+  "base_directory": ".quake",
+
+  "actions": [
+    "install_dependencies": [
+      "libopusfile0",
+      "libmad0",
+      "libsdl2-2.0-0",
+      "innoextract",
+      "bchunk",
+      "mesa-utils",
+      "vorbis-tools"
+    ],
+
+    "install_game_files": {
+      "type": "innoextract"
+    },
+
+    "move_game_files": [
+      "id1/pak0.pak",
+      "id1/pak1.pak",
+      "hipnotic/pak0.pak",
+      "rogue/pak0.pak"
+    ],
+
+    "convert_music": [
+      {
+        "bin_file": "game.gog",
+        "cue_file": "game.cue",
+        "destination": "id1"
+      },
+      {
+        "bin_file": "gamea.gog",
+        "cue_file": "gamea.cue",
+        "destination": "hipnotic"
+      },
+      {
+        "bin_file": "gamed.gog",
+        "cue_file": "gamed.cue",
+        "destination": "rogue"
+      }
+    ]
+  ]
+}
